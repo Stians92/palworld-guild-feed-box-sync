@@ -4,14 +4,18 @@
 
 **Title:** Guild Feed Box Sync
 
-**Short description:** Keeps food evenly distributed across your guild's
-existing Feed Boxes. No new building, recipe, or technology unlock required.
+**Short description:** Run food production from one main base and automatically
+distribute it among your guild's existing Feed Boxes.
 
 **Description:**
 
-Guild Feed Box Sync keeps the food at your guild's bases evenly distributed.
-Instead of adding a special shared container, it works with the normal Feed
-Boxes you already use.
+Run your food production from one main base instead of building farms and
+kitchens at every outpost. Guild Feed Box Sync automatically distributes that
+food among your guild's existing Feed Boxes, helping keep remote bases
+supplied.
+
+It uses the normal Feed Boxes you already have rather than adding a special
+building or shared container.
 
 If your guild has 1,000 baked berries across four eligible Feed Boxes, the mod
 will gradually move them toward 250 berries in each box. Every food item is
@@ -42,7 +46,7 @@ INSTALLATION
 For co-op, install Guild Feed Box Sync on the player hosting the world. Other
 players are intended to join without installing it and should continue to see
 ordinary Feed Boxes. This has not yet been confirmed with an unmodded guest, so
-multiplayer support should be considered experimental in version 0.1.0.
+multiplayer support should be considered experimental in version 0.2.0.
 
 Windows dedicated-server files are included, but dedicated-server use and
 servers containing multiple guilds have not yet been tested.
@@ -56,6 +60,10 @@ TESTED IN SINGLE-PLAYER
 - Building and destroying boxes
 - Restarting with an existing imbalance
 - Pals eating while food is being balanced
+
+SOURCE CODE AND SUPPORT
+
+[url=https://github.com/Stians92/palworld-guild-feed-box-sync]Source code, user guide, bug reports, and releases on GitHub[/url]
 
 ## Uploader handoff
 
@@ -79,9 +87,10 @@ TESTED IN SINGLE-PLAYER
 10. Subscribe to the hidden item, remove or disable the local development copy,
     and smoke-test the actual subscribed installation before making it public.
 
-**Initial change note:** Initial 0.1.0 release: guild-scoped balancing
-for normal and refrigerated Feed Boxes, filter-aware placement, 500-item transfer
-batches, and conservative authority and capacity checks.
+**0.2.0 change note:** Improved compatibility and stability alongside other
+UE4SS mods by moving periodic balancing entirely onto one persistent game-thread
+delayed action. Balancing behavior and existing vanilla Feed Box support are
+unchanged.
 
 Every future upload must change the `Version` string in `mod/Info.json` before
 building the package.

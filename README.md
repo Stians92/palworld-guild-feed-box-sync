@@ -21,10 +21,12 @@ still awaits multiplayer validation.
 
 ## Current status
 
-Version 0.1.0 is the initial public release. Automatic transfers are enabled
-after a delayed readiness gate and use only the native item operation verified
-against vanilla Feed Box UI behavior. See the [user guide](docs/USER-GUIDE.md)
-for installation, expected behavior, and troubleshooting.
+Version 0.2.0 moves the periodic balance worker onto one persistent UE4SS
+game-thread delayed action, replacing the initial release's asynchronous bridge.
+Automatic transfers remain behind the delayed readiness gate and use only the
+native item operation verified against vanilla Feed Box UI behavior. See the
+[user guide](docs/USER-GUIDE.md) for installation, expected behavior, and
+troubleshooting.
 
 ## Requirements
 
@@ -60,7 +62,7 @@ yet been validated with an unmodded client on a modded host.
 For a Windows dedicated server, enable global mod loading and list
 `UE4SSExperimentalPW` before `GuildFeedBox` in `Mods/PalModSettings.ini`. The
 package contains the official Windows server installation rule, but dedicated-
-server runtime remains untested and should be treated as experimental in 0.1.0.
+server runtime remains untested and should be treated as experimental in 0.2.0.
 
 ## How synchronization works
 
@@ -111,6 +113,9 @@ to [SECURITY.md](SECURITY.md).
   PowerShell session may be required for a protected Steam installation.
 - Palworld will be restarted after deployment; the script does not reload a
   running Lua mod.
+- The released Guild Feed Box Sync Workshop item is disabled or unsubscribed.
+  Running the development and released copies together would submit competing
+  balance requests.
 
 From the repository root, deploy to the default Steam location with:
 
@@ -124,10 +129,12 @@ For another Steam library or installation directory, use:
 .\tools\deploy.ps1 -PalworldPath "D:\SteamLibrary\steamapps\common\Palworld"
 ```
 
-The script mirrors `mod/` into the selected UE4SS
-`Mods\GuildFeedBox` directory. Mirroring removes files in that destination that
-do not exist under `mod/`; do not keep manual changes or unrelated files there.
-It does not modify other UE4SS mods.
+The script copies `enabled.txt` and mirrors `mod/Scripts/` into the selected
+UE4SS `Mods\GuildFeedBoxDev` directory. The separate development folder prevents
+Palworld's Workshop loader from removing or replacing the local test scripts.
+Mirroring removes files in `GuildFeedBoxDev\Scripts` that do not exist under
+`mod/Scripts`; do not keep manual changes there. It does not modify other UE4SS
+mods or the Workshop-managed `GuildFeedBox` directory.
 
 After restarting Palworld, load a save containing at least two Feed Boxes and
 search `UE4SS.log` for `[GuildFeedBox]`. The Workshop UE4SS log is at
@@ -147,6 +154,7 @@ Run the pure Lua regression tests with a standalone Lua interpreter:
 ```powershell
 lua .\tests\balance_spec.lua
 lua .\tests\identity_spec.lua
+lua .\tests\runtime_policy_spec.lua
 ```
 
 Build and validate the allowlisted Workshop folder, ZIP, and SHA-256 file with:
@@ -162,11 +170,13 @@ The packaging script produces a Palworld Mod Uploader archive ending in
 regression tests and Windows package validation for pushes and pull requests
 targeting `main`.
 
-The automatic executor submits at most one move per interval and reads containers
-again before selecting the next move. It fails closed unless a Feed Box actor
-reports server authority, and any change to the loaded box set restarts its
-readiness delay. Each pass selects the largest capacity-compatible deficit so
-small corrections caused by live food consumption cannot starve larger moves.
+The automatic executor uses one UE4SS `LoopInGameThreadWithDelay` action, submits
+at most one move per interval, and reads containers again before selecting the
+next move. It does not run Lua or touch UObjects from UE4SS's asynchronous thread.
+It fails closed unless the delayed-actions API is available and a Feed Box actor
+reports server authority. Any change to the loaded box set restarts its readiness
+delay. Each pass selects the largest capacity-compatible deficit so small
+corrections caused by live food consumption cannot starve larger moves.
 
 The production build respects each Feed Box's category filters. Raw ingredients
 and prepared food are handled independently. Existing contents in filtered-out

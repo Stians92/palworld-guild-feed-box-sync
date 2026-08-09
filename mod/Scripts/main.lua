@@ -788,12 +788,23 @@ safe("register concrete-model hook", function()
     end)
 end)
 
-LoopAsync(Config.BALANCE_INTERVAL_MS, function()
-    if Config.ENABLE_TRANSFERS then
-        ExecuteInGameThread(function() safe("balance tick", runBalanceTick) end)
-    end
-    return false
-end)
+local balanceLoopHandle
+local balanceLoopStarted = false
+if Config.ENABLE_TRANSFERS then
+    local ok = safe("start balance loop", function()
+        if type(LoopInGameThreadWithDelay) ~= "function" then
+            error("UE4SS Delayed Actions API is unavailable; automatic transfers disabled")
+        end
+        balanceLoopHandle = LoopInGameThreadWithDelay(Config.BALANCE_INTERVAL_MS, function()
+            safe("balance tick", runBalanceTick)
+        end)
+        if type(balanceLoopHandle) ~= "number" then
+            error("UE4SS did not create the balance loop; automatic transfers disabled")
+        end
+        log("game-thread balance loop started; handle=" .. tostring(balanceLoopHandle))
+    end)
+    balanceLoopStarted = ok and type(balanceLoopHandle) == "number"
+end
 
 log(string.format("loaded production build. automatic transfers=%s interval=%dms.",
-    tostring(Config.ENABLE_TRANSFERS), Config.BALANCE_INTERVAL_MS))
+    tostring(balanceLoopStarted), Config.BALANCE_INTERVAL_MS))

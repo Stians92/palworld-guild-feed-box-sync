@@ -37,6 +37,9 @@ jobs:
       - name: Run guild identity tests
         run: lua5.4 ./tests/identity_spec.lua
 
+      - name: Check runtime scheduling policy
+        run: lua5.4 ./tests/runtime_policy_spec.lua
+
   package:
     name: Validate release package
     runs-on: windows-latest

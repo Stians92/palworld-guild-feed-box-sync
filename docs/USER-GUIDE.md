@@ -100,7 +100,7 @@ Known limitations are listed in [KNOWN-ISSUES.md](../KNOWN-ISSUES.md).
 
 ## Compatibility Status
 
-Version 0.1.0 has been tested in single-player with normal and refrigerated Feed
+Version 0.2.0 has been tested in single-player with normal and refrigerated Feed
 Boxes, distant bases, category filters, full destinations, construction and
 destruction, restarts, and active Pal consumption.
 
