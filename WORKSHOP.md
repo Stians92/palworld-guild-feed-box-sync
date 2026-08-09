@@ -66,7 +66,7 @@ TESTED IN SINGLE-PLAYER
    `steamapps/workshop/content/1623730`.
 4. Choose **Create New Mod**, select **Lua**, and allow the uploader to create a
    numeric Workshop item directory and its `.workshop.json` file.
-5. Copy the contents of `dist/GuildFeedBox-<Version>/` into that numeric
+5. Copy the contents of `dist/GuildFeedBox-<Version>-workshop/` into that numeric
    directory. Preserve the uploader-created `.workshop.json` file.
 6. In Palworld, enable the dependency and local Guild Feed Box Sync item under
    **Options > Mod Management**, restart, and perform a final smoke test.

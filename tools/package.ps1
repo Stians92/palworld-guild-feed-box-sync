@@ -26,7 +26,7 @@ if ([string]::IsNullOrWhiteSpace($info.Thumbnail)) {
     throw "Info.json must declare a Thumbnail."
 }
 
-$requiredFiles = @(
+$workshopFiles = @(
     "Info.json",
     [string]$info.Thumbnail,
     "Scripts\main.lua",
@@ -36,7 +36,16 @@ $requiredFiles = @(
     "Scripts\identity.lua"
 )
 
-foreach ($relativePath in $requiredFiles) {
+$manualFiles = @(
+    "enabled.txt",
+    "Scripts\main.lua",
+    "Scripts\balance.lua",
+    "Scripts\config.lua",
+    "Scripts\gamedefs.lua",
+    "Scripts\identity.lua"
+)
+
+foreach ($relativePath in ($workshopFiles + $manualFiles | Select-Object -Unique)) {
     $sourcePath = Join-Path $modRoot $relativePath
     if (-not (Test-Path -LiteralPath $sourcePath -PathType Leaf)) {
         throw "Required package file is missing: $relativePath"
@@ -61,39 +70,77 @@ if (-not $outputRootFull.StartsWith($repoRootWithSeparator, [System.StringCompar
     throw "OutputRoot must remain inside the repository."
 }
 
-$packageName = "$($info.PackageName)-$($info.Version)"
-$packageRoot = Join-Path $outputRootFull $packageName
-$zipPath = Join-Path $outputRootFull "$packageName.zip"
-$checksumPath = "$zipPath.sha256"
+$baseName = "$($info.PackageName)-$($info.Version)"
+$workshopName = "$baseName-workshop"
+$workshopRoot = Join-Path $outputRootFull $workshopName
+$workshopZipPath = Join-Path $outputRootFull "$workshopName.zip"
+$workshopChecksumPath = "$workshopZipPath.sha256"
+$manualName = "$baseName-manual"
+$manualRoot = Join-Path $outputRootFull $manualName
+$manualModRoot = Join-Path $manualRoot $info.PackageName
+$manualZipPath = Join-Path $outputRootFull "$manualName.zip"
+$manualChecksumPath = "$manualZipPath.sha256"
+
+$legacyPaths = @(
+    (Join-Path $outputRootFull $baseName),
+    (Join-Path $outputRootFull "$baseName.zip"),
+    (Join-Path $outputRootFull "$baseName.zip.sha256")
+)
+$outputPaths = @(
+    $workshopRoot,
+    $workshopZipPath,
+    $workshopChecksumPath,
+    $manualRoot,
+    $manualZipPath,
+    $manualChecksumPath
+) + $legacyPaths
 
 New-Item -ItemType Directory -Force -Path $outputRootFull | Out-Null
-if (Test-Path -LiteralPath $packageRoot) {
-    Remove-Item -LiteralPath $packageRoot -Recurse -Force
-}
-if (Test-Path -LiteralPath $zipPath) {
-    Remove-Item -LiteralPath $zipPath -Force
-}
-if (Test-Path -LiteralPath $checksumPath) {
-    Remove-Item -LiteralPath $checksumPath -Force
+foreach ($path in $outputPaths) {
+    if (Test-Path -LiteralPath $path) {
+        Remove-Item -LiteralPath $path -Recurse -Force
+    }
 }
 
-New-Item -ItemType Directory -Force -Path (Join-Path $packageRoot "Scripts") | Out-Null
-foreach ($relativePath in $requiredFiles) {
-    $destinationPath = Join-Path $packageRoot $relativePath
+New-Item -ItemType Directory -Force -Path (Join-Path $workshopRoot "Scripts") | Out-Null
+foreach ($relativePath in $workshopFiles) {
+    $destinationPath = Join-Path $workshopRoot $relativePath
     Copy-Item -LiteralPath (Join-Path $modRoot $relativePath) -Destination $destinationPath
 }
 
-Compress-Archive -Path (Join-Path $packageRoot "*") -DestinationPath $zipPath -CompressionLevel Optimal
-$hash = (Get-FileHash -Algorithm SHA256 -LiteralPath $zipPath).Hash.ToLowerInvariant()
-Set-Content -LiteralPath $checksumPath -Value "$hash  $([System.IO.Path]::GetFileName($zipPath))" -Encoding ascii
+New-Item -ItemType Directory -Force -Path (Join-Path $manualModRoot "Scripts") | Out-Null
+foreach ($relativePath in $manualFiles) {
+    $destinationPath = Join-Path $manualModRoot $relativePath
+    Copy-Item -LiteralPath (Join-Path $modRoot $relativePath) -Destination $destinationPath
+}
+Copy-Item -LiteralPath (Join-Path $repoRoot "docs\MANUAL-INSTALL.md") -Destination (Join-Path $manualModRoot "INSTALL.md")
 
-$unexpected = Get-ChildItem -LiteralPath $packageRoot -Recurse -File |
-    ForEach-Object { $_.FullName.Substring($packageRoot.Length + 1) } |
-    Where-Object { $requiredFiles -notcontains $_ }
-if ($unexpected) {
-    throw "Unexpected files entered the package: $($unexpected -join ', ')"
+$unexpectedWorkshopFiles = Get-ChildItem -LiteralPath $workshopRoot -Recurse -File |
+    ForEach-Object { $_.FullName.Substring($workshopRoot.Length + 1) } |
+    Where-Object { $workshopFiles -notcontains $_ }
+if ($unexpectedWorkshopFiles) {
+    throw "Unexpected files entered the Workshop package: $($unexpectedWorkshopFiles -join ', ')"
 }
 
-Write-Host "Workshop folder: $packageRoot"
-Write-Host "Archive:         $zipPath"
-Write-Host "SHA-256:        $hash"
+$expectedManualFiles = @($manualFiles | ForEach-Object { "$($info.PackageName)\$_" }) + "$($info.PackageName)\INSTALL.md"
+$unexpectedManualFiles = Get-ChildItem -LiteralPath $manualRoot -Recurse -File |
+    ForEach-Object { $_.FullName.Substring($manualRoot.Length + 1) } |
+    Where-Object { $expectedManualFiles -notcontains $_ }
+if ($unexpectedManualFiles) {
+    throw "Unexpected files entered the manual package: $($unexpectedManualFiles -join ', ')"
+}
+
+Compress-Archive -Path (Join-Path $workshopRoot "*") -DestinationPath $workshopZipPath -CompressionLevel Optimal
+Compress-Archive -Path (Join-Path $manualRoot "*") -DestinationPath $manualZipPath -CompressionLevel Optimal
+
+$workshopHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $workshopZipPath).Hash.ToLowerInvariant()
+$manualHash = (Get-FileHash -Algorithm SHA256 -LiteralPath $manualZipPath).Hash.ToLowerInvariant()
+Set-Content -LiteralPath $workshopChecksumPath -Value "$workshopHash  $([System.IO.Path]::GetFileName($workshopZipPath))" -Encoding ascii
+Set-Content -LiteralPath $manualChecksumPath -Value "$manualHash  $([System.IO.Path]::GetFileName($manualZipPath))" -Encoding ascii
+
+Write-Host "Workshop folder:  $workshopRoot"
+Write-Host "Workshop archive: $workshopZipPath"
+Write-Host "Workshop SHA-256: $workshopHash"
+Write-Host "Manual folder:    $manualRoot"
+Write-Host "Manual archive:   $manualZipPath"
+Write-Host "Manual SHA-256:   $manualHash"

@@ -12,6 +12,11 @@ recipe, technology unlock, or separate shared inventory.
 3. Open **Options > Mod Management** in Palworld and enable both mods.
 4. Restart Palworld before loading the world.
 
+Steam Workshop is the recommended installation method. Advanced users managing
+UE4SS themselves can instead follow the
+[manual installation guide](MANUAL-INSTALL.md). Do not install both the
+Workshop and manual copies of Guild Feed Box Sync.
+
 Install only one copy of UE4SS. Combining the Workshop dependency with a manual
 UE4SS installation can load it twice and cause errors or crashes.
 

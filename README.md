@@ -46,6 +46,12 @@ For a Steam listen host or single-player game:
 3. In Palworld, open **Options > Mod Management**, enable both mods, and restart
    the game.
 
+Advanced users can install the UE4SS Lua files directly by following the
+[manual installation guide](docs/MANUAL-INSTALL.md). Manual installation does
+not require a `.pak`, but it still requires exactly one compatible UE4SS
+installation. Do not install both the Workshop and manual copies of Guild Feed
+Box Sync.
+
 Only the host is intended to need Guild Feed Box Sync. Other players should see
 ordinary vanilla Feed Boxes and receive the resulting inventory changes through
 normal game replication. This client behavior is the design target but has not
@@ -150,8 +156,11 @@ Build and validate the allowlisted Workshop folder, ZIP, and SHA-256 file with:
 ```
 
 Generated release artifacts are written under `dist/` and are not committed.
-GitHub Actions repeats the Lua regression tests and Windows package validation
-for pushes and pull requests targeting `main`.
+The packaging script produces a Palworld Mod Uploader archive ending in
+`-workshop.zip` and a directly extractable UE4SS archive ending in
+`-manual.zip`, with a SHA-256 file for each. GitHub Actions repeats the Lua
+regression tests and Windows package validation for pushes and pull requests
+targeting `main`.
 
 The automatic executor submits at most one move per interval and reads containers
 again before selecting the next move. It fails closed unless a Feed Box actor
