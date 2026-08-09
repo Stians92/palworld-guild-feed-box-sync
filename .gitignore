@@ -1,5 +1,6 @@
 # Generated Workshop packages
 /dist/
+/tmp/
 
 # Runtime and editor artifacts
 *.log
