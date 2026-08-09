@@ -1,0 +1,21 @@
+# Generated Workshop packages
+/dist/
+
+# Runtime and editor artifacts
+*.log
+*.tmp
+*.dmp
+*.mdmp
+*.crash
+*.sav
+.env
+.env.*
+!.env.example
+.workshop.json
+ObjectDump.txt
+CXXHeaderDump/
+UHTHeaderDump/
+.idea/
+.vscode/
+Thumbs.db
+Desktop.ini

@@ -1,0 +1,32 @@
+{
+  "ModName": "Guild Feed Box Sync",
+  "PackageName": "GuildFeedBox",
+  "Version": "0.1.0",
+  "DebugMode": false,
+  "MinRevision": 82182,
+  "Author": "Stians92",
+  "Thumbnail": "thumbnail.jpg",
+  "Dependencies": [
+    "UE4SSExperimentalPW"
+  ],
+  "Tags": [
+    "UE4SS",
+    "Gameplay",
+    "Utilities"
+  ],
+  "InstallRule": [
+    {
+      "Type": "Lua",
+      "Targets": [
+        "./Scripts"
+      ]
+    },
+    {
+      "Type": "Lua",
+      "IsServer": true,
+      "Targets": [
+        "./Scripts"
+      ]
+    }
+  ]
+}
