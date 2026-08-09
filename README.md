@@ -77,6 +77,17 @@ prepared meals as `Meal`; these are deny-list identifiers, not the UI labels.
 
 Known operational limitations are tracked in [KNOWN-ISSUES.md](KNOWN-ISSUES.md).
 
+## Support and contributions
+
+Use the [issue tracker](https://github.com/Stians92/palworld-guild-feed-box-sync/issues)
+for reproducible bugs and focused feature requests. See
+[CONTRIBUTING.md](CONTRIBUTING.md) before submitting code or detailed test
+results.
+
+Potential cross-guild transfers, item duplication or loss, remotely triggered
+crashes, and other exploitable behavior should be reported privately according
+to [SECURITY.md](SECURITY.md).
+
 ## Development
 
 `tools/deploy.ps1` assumes:
