@@ -1,5 +1,10 @@
 # Guild Feed Box Sync
 
+[Steam Workshop](https://steamcommunity.com/sharedfiles/filedetails/?id=3780425019)
+| [User guide](docs/USER-GUIDE.md)
+| [Known issues](KNOWN-ISSUES.md)
+| [Report a problem](https://github.com/Stians92/palworld-guild-feed-box-sync/issues)
+
 Guild Feed Box Sync is a server-oriented Palworld UE4SS Lua mod. It redistributes
 food between the existing vanilla Feed Boxes owned by the same guild. It adds no
 building, recipe, or technology unlock, and both Feed Box variants retain their
@@ -16,9 +21,10 @@ still awaits multiplayer validation.
 
 ## Current status
 
-Version 0.1.0 is an initial release candidate. Automatic transfers are enabled
+Version 0.1.0 is the initial public release. Automatic transfers are enabled
 after a delayed readiness gate and use only the native item operation verified
-against vanilla Feed Box UI behavior.
+against vanilla Feed Box UI behavior. See the [user guide](docs/USER-GUIDE.md)
+for installation, expected behavior, and troubleshooting.
 
 ## Requirements
 
@@ -157,7 +163,7 @@ restart recovery, box construction and destruction, full or incompatible
 destinations, Pal consumption, and an extended soak test.
 
 The following multiplayer coverage remains outstanding for this initial
-release candidate:
+release:
 
 - A modded Steam listen host with an unmodded client, including UI visibility,
   replication, reconnect, and persistence.

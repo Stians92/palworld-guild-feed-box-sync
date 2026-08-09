@@ -79,7 +79,7 @@ TESTED IN SINGLE-PLAYER
 10. Subscribe to the hidden item, remove or disable the local development copy,
     and smoke-test the actual subscribed installation before making it public.
 
-**Initial change note:** Initial 0.1.0 release candidate: guild-scoped balancing
+**Initial change note:** Initial 0.1.0 release: guild-scoped balancing
 for normal and refrigerated Feed Boxes, filter-aware placement, 500-item transfer
 batches, and conservative authority and capacity checks.
 
