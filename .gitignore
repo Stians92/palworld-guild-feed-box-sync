@@ -1,6 +1,7 @@
 # Generated Workshop packages
 /dist/
 /tmp/
+/screenshots/*.png
 
 # Runtime and editor artifacts
 *.log
