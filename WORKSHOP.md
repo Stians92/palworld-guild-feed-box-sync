@@ -4,53 +4,58 @@
 
 **Title:** Guild Feed Box Sync
 
-**Short description:** Automatically balances food across your guild's existing
-vanilla Feed Boxes. No custom building or technology unlock. Designed for host-
-side use with vanilla clients; multiplayer validation pending.
+**Short description:** Keeps food evenly distributed across your guild's
+existing Feed Boxes. No new building, recipe, or technology unlock required.
 
 **Description:**
 
-Guild Feed Box Sync periodically moves existing food stacks between your guild's
-vanilla Feed Boxes. For each item, it aims to give every eligible box the same
-quantity while respecting filters, slot capacity, and unavoidable remainders.
-It does not create a shared inventory or add a building, recipe, or technology
-unlock. Players keep using the normal Feed Box interface and inventory behavior.
+Guild Feed Box Sync keeps the food at your guild's bases evenly distributed.
+Instead of adding a special shared container, it works with the normal Feed
+Boxes you already use.
 
-The host submits at most one native move every five seconds. Each move is capped
-at 500 items and the source and destination stack limits, then all containers
-are read again before another move is selected. Large or varied inventories
-therefore equalize gradually. Synchronization starts after the Feed Box set
-remains stable for eight scans, normally about 40 seconds; building or destroying
-a box restarts that readiness period.
+If your guild has 1,000 baked berries across four eligible Feed Boxes, the mod
+will gradually move them toward 250 berries in each box. Every food item is
+balanced separately. When an amount cannot be divided evenly, some boxes will
+simply contain one extra item.
 
-Because the mod operates on existing server-authoritative vanilla containers,
-other players are intended to join without installing it. They should see normal
-Feed Boxes while their contents update through the game's ordinary replication.
-This avoids the client-side assets and classes a custom shared building would
-typically require. Unmodded-client compatibility with a modded host is currently
-an architectural expectation and remains listed as an outstanding multiplayer
-test, not a verified claim.
+FEATURES
 
-Both normal and refrigerated Feed Boxes are supported. Their ingredient and
-prepared-food filters are respected.
+- Works with both normal and refrigerated Feed Boxes.
+- Syncs food between boxes at the same base and at different bases owned by the
+  same guild.
+- Respects each box's Ingredients and Food filter settings.
+- Respects full boxes, available slots, and normal stack limits.
+- Uses the existing Feed Box inventory and interface.
+- Adds no building, recipe, technology unlock, or separate shared inventory.
 
-**Installation**
+Food is moved in steps rather than all at once. The mod checks every five
+seconds and moves up to 500 items at a time, so a large collection can take a
+little while to settle. Syncing normally begins about 40 seconds after loading a
+world. Building or destroying a Feed Box starts that short waiting period again.
 
-1. Subscribe to **UE4SS Experimental (Palworld)**, Workshop item `3625223587`.
-2. Subscribe to **Guild Feed Box Sync**.
-3. Enable both under **Options > Mod Management**, then restart Palworld.
+INSTALLATION
 
-Install Guild Feed Box Sync on the host. Vanilla-client compatibility is
-intended but has not yet been tested with an unmodded client on a modded host.
-The package includes a Windows dedicated-server installation rule, but dedicated-
-server runtime is untested and should be treated as experimental in 0.1.0.
+1. Subscribe to UE4SS Experimental (Palworld), Workshop item 3625223587.
+2. Subscribe to Guild Feed Box Sync.
+3. Enable both under Options > Mod Management, then restart Palworld.
 
-This is an initial release candidate. Single-player behavior has been exercised
-extensively, including restart, distant bases, changing filters, full boxes,
-building and destroying boxes, refrigerated storage, Pal consumption, and a
-long-running soak test. Listen-host client replication, multi-guild isolation,
-multi-guild load, and Windows dedicated-server runtime still require multiplayer
-validation.
+For co-op, install Guild Feed Box Sync on the player hosting the world. Other
+players are intended to join without installing it and should continue to see
+ordinary Feed Boxes. This has not yet been confirmed with an unmodded guest, so
+multiplayer support should be considered experimental in version 0.1.0.
+
+Windows dedicated-server files are included, but dedicated-server use and
+servers containing multiple guilds have not yet been tested.
+
+TESTED IN SINGLE-PLAYER
+
+- Normal and refrigerated Feed Boxes
+- Distant bases
+- Ingredient-only and prepared-food-only filters
+- Full boxes and unavailable slots
+- Building and destroying boxes
+- Restarting with an existing imbalance
+- Pals eating while food is being balanced
 
 ## Uploader handoff
 
