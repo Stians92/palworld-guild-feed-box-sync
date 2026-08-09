@@ -183,3 +183,13 @@ release candidate:
 - Every request must produce an observed destination-slot increase on the next
   scan. A route that does not apply cools down for one minute instead of being
   retried continuously.
+
+## License
+
+The source code and scripts are available under the [MIT License](LICENSE).
+Palworld imagery, screenshots, names, trademarks, and other third-party visual
+material in this repository are not covered by that license; see
+[ASSETS.md](ASSETS.md) for details.
+
+Guild Feed Box Sync is an unofficial fan-made mod and is not affiliated with or
+endorsed by Pocketpair.
