@@ -150,6 +150,8 @@ Build and validate the allowlisted Workshop folder, ZIP, and SHA-256 file with:
 ```
 
 Generated release artifacts are written under `dist/` and are not committed.
+GitHub Actions repeats the Lua regression tests and Windows package validation
+for pushes and pull requests targeting `main`.
 
 The automatic executor submits at most one move per interval and reads containers
 again before selecting the next move. It fails closed unless a Feed Box actor

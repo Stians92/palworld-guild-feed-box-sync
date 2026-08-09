@@ -1,0 +1,60 @@
+name: CI
+
+on:
+  push:
+    branches:
+      - main
+  pull_request:
+    branches:
+      - main
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  lua-tests:
+    name: Lua tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Install Lua 5.4
+        run: |
+          sudo apt-get update
+          sudo apt-get install --yes lua5.4
+
+      - name: Check Lua syntax
+        run: |
+          find mod/Scripts tests -type f -name '*.lua' -print0 \
+            | xargs -0 -n1 luac5.4 -p
+
+      - name: Run planner tests
+        run: lua5.4 ./tests/balance_spec.lua
+
+      - name: Run guild identity tests
+        run: lua5.4 ./tests/identity_spec.lua
+
+  package:
+    name: Validate release package
+    runs-on: windows-latest
+    timeout-minutes: 10
+    steps:
+      - name: Check out repository
+        uses: actions/checkout@v4
+
+      - name: Build package
+        shell: pwsh
+        run: ./tools/package.ps1
+
+      - name: Upload package artifact
+        uses: actions/upload-artifact@v6
+        with:
+          name: GuildFeedBox-package
+          path: |
+            dist/*.zip
+            dist/*.sha256
+          if-no-files-found: error
+          retention-days: 14
