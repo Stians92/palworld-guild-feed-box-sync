@@ -10,13 +10,17 @@ file.
 
 ## Requirements
 
-- A compatible Palworld installation on Windows
-- Exactly one Palworld-compatible UE4SS installation
+- The Steam version of Palworld on Windows
+- Exactly one Palworld-compatible UE4SS installation, such as
+  [UE4SS Experimental (Palworld)](https://steamcommunity.com/sharedfiles/filedetails/?id=3625223587)
 - The `GuildFeedBox-<Version>-manual.zip` archive from the matching
   [GitHub Release](https://github.com/Stians92/palworld-guild-feed-box-sync/releases)
 
 Do not install both Workshop UE4SS and a separate manual UE4SS distribution.
 Loading UE4SS twice can cause collisions or crashes.
+
+When using this manual archive, unsubscribe from or disable the Workshop copy of
+Guild Feed Box Sync. The host should load only one copy of the mod.
 
 ## Install
 
