@@ -46,7 +46,21 @@ local function booleanOrNil(value)
 end
 
 local function guidString(value)
-    return Identity.guildGuidString(unwrap(value))
+    value = unwrap(value)
+    local a, b, c, d
+    local ok = pcall(function()
+        a, b, c, d = value.A, value.B, value.C, value.D
+    end)
+    if ok and type(a) == "number" and type(b) == "number"
+        and type(c) == "number" and type(d) == "number" then
+        local function uint32(number)
+            if number < 0 then return number + 4294967296 end
+            return number
+        end
+        return string.format("%08X-%08X-%08X-%08X",
+            uint32(a), uint32(b), uint32(c), uint32(d))
+    end
+    return nil
 end
 
 local function valueString(value)
@@ -354,7 +368,7 @@ local function resolveBox(actor)
     end
     -- Only a concrete, nonzero FGuid may group boxes. Unexpected reflected
     -- values stay unresolved and are isolated by groupedPlans.
-    box.guildKey = guidString(box.guild)
+    box.guildKey = Identity.validatedGuildKey(valueString(box.guild))
     box.counts, box.slotPath = readCounts(box.container)
     box.slots = readSlots(box.container)
     box.filterOff, box.filterDiagnostic = readFilterOffSet(box.container)

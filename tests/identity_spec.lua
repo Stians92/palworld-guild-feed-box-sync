@@ -7,25 +7,22 @@ local function equal(actual, expected, label)
         label, tostring(expected), tostring(actual)))
 end
 
-equal(Identity.guildGuidString({ A = 1, B = 2, C = 3, D = 4 }),
-    "00000001-00000002-00000003-00000004", "positive GUID")
-equal(Identity.guildGuidString({ A = -1, B = -2147483648, C = 0, D = 4 }),
-    "FFFFFFFF-80000000-00000000-00000004", "signed GUID parts")
+equal(Identity.validatedGuildKey("00000001-00000002-00000003-00000004"),
+    "00000001-00000002-00000003-00000004", "canonical GUID")
+equal(Identity.validatedGuildKey("abcdef01-23456789-aabbccdd-00000004"),
+    "ABCDEF01-23456789-AABBCCDD-00000004", "lowercase normalization")
 
 for label, value in pairs({
     ["false"] = false,
     ["string"] = "None",
-    ["zero GUID"] = { A = 0, B = 0, C = 0, D = 0 },
-    ["missing part"] = { A = 1, B = 2, C = 3 },
-    ["noninteger part"] = { A = 1.5, B = 2, C = 3, D = 4 },
-    ["out-of-range part"] = { A = 4294967296, B = 2, C = 3, D = 4 },
+    ["zero GUID"] = "00000000-00000000-00000000-00000000",
+    ["missing part"] = "00000001-00000002-00000003",
+    ["wrong grouping"] = "00000001-0002-0003-00000004",
+    ["non-hex"] = "0000000G-00000002-00000003-00000004",
 }) do
-    equal(Identity.guildGuidString(value), nil, label)
+    equal(Identity.validatedGuildKey(value), nil, label)
 end
 
-local malformed = setmetatable({}, {
-    __index = function() error("unexpected reflected value") end,
-})
-equal(Identity.guildGuidString(malformed), nil, "throwing wrapper")
+equal(Identity.validatedGuildKey({}), nil, "unexpected wrapper")
 
 print("identity_spec.lua: all tests passed")
