@@ -13,6 +13,10 @@ Config.FULL_DISCOVERY_EVERY_PASSES = 12
 Config.READINESS_PASSES = 8
 Config.ROUTE_COOLDOWN_PASSES = 12
 
+-- Log only balance passes that consume a noticeable portion of a high-refresh
+-- frame. This is temporary release profiling and does not change tick cadence.
+Config.PERF_LOG_THRESHOLD_MS = 0.5
+
 -- Include the refrigerated late-game Feed Box as another vanilla feed box.
 Config.INCLUDE_COOLED_FEED_BOX = true
 

@@ -8,6 +8,9 @@ local concreteByActorKey = {}
 local actorByKey = {}
 local discoveryPass = 0
 local stableObjectKey
+local reflectedMemberCache = { functions = {}, properties = {} }
+local networkItemCache
+local guidLibraryCache
 
 local function log(message)
     print(string.format("[%s] %s\n", MOD, tostring(message)))
@@ -78,9 +81,17 @@ end
 local function hasReflectedMember(object, wanted, functions)
     if not valid(object) then return false end
     local found = false
-    local struct = object:GetClass()
+    local struct
+    local ok = pcall(function() struct = object:GetClass() end)
+    if not ok or not valid(struct) then return false end
+    local classKey = stableObjectKey(struct)
+    local cache = functions and reflectedMemberCache.functions or reflectedMemberCache.properties
+    local classCache = cache[classKey]
+    if classCache and classCache[wanted] ~= nil then return classCache[wanted] end
+
+    local complete = true
     while valid(struct) and not found do
-        pcall(function()
+        ok = pcall(function()
             if functions then
                 struct:ForEachFunction(function(member)
                     if member:GetFName():ToString() == wanted then found = true end
@@ -91,7 +102,16 @@ local function hasReflectedMember(object, wanted, functions)
                 end)
             end
         end)
+        if not ok then
+            complete = false
+            break
+        end
         struct = struct:GetSuperStruct()
+    end
+    if complete then
+        classCache = classCache or {}
+        classCache[wanted] = found
+        cache[classKey] = classCache
     end
     return found
 end
@@ -182,28 +202,6 @@ stableObjectKey = function(object)
     return key or tostring(object)
 end
 
-local function readCounts(container)
-    local counts = {}
-    if not valid(container) then return counts, "invalid container" end
-    local slots, slotPath = firstProperty(container, Defs.SLOT_ARRAY_PROPERTIES)
-    if slots == nil then return counts, "slot array not found" end
-    local ok, err = pcall(function()
-        slots:ForEach(function(_, element)
-            local slot = unwrap(element)
-            if valid(slot) then
-                local itemId, count
-                pcall(function() itemId = slot.ItemId.StaticId:ToString() end)
-                pcall(function() count = slot.StackCount end)
-                if itemId and itemId ~= "None" and type(count) == "number" and count > 0 then
-                    counts[itemId] = (counts[itemId] or 0) + count
-                end
-            end
-        end)
-    end)
-    if not ok then return {}, tostring(err) end
-    return counts, slotPath
-end
-
 local function addNames(result, values, depth)
     if depth > 3 then return end
     values = unwrap(values)
@@ -292,16 +290,17 @@ local function readSlotItemTypeB(slot)
     return tonumber(tostring(typeB))
 end
 
-local function readSlots(container)
+local function readSlotSnapshot(container)
     local result = {}
-    if not valid(container) then return result end
-    local slots = firstProperty(container, Defs.SLOT_ARRAY_PROPERTIES)
-    if slots == nil then return result end
+    local counts = {}
+    if not valid(container) then return result, counts, "invalid container", false end
+    local slots, slotPath = firstProperty(container, Defs.SLOT_ARRAY_PROPERTIES)
+    if slots == nil then return result, counts, "slot array not found", false end
     local containerId
     pcall(function() containerId = container:GetId() end)
     local containerGuid
     pcall(function() containerGuid = guidString(containerId.ID) end)
-    pcall(function()
+    local ok, err = pcall(function()
         slots:ForEach(function(_, element)
             local slot = unwrap(element)
             if valid(slot) then
@@ -319,11 +318,13 @@ local function readSlots(container)
                 pcall(function() slotIdIndex = slotId.SlotIndex end)
                 pcall(function() slotIdContainerGuid = guidString(slotId.ContainerId.ID) end)
                 if itemId and itemId ~= "None" then itemTypeB = readSlotItemTypeB(slot) end
+                itemId = itemId or "None"
+                count = type(count) == "number" and count or 0
                 table.insert(result, {
                     object = slot,
                     slotId = slotId,
-                    itemId = itemId or "None",
-                    count = type(count) == "number" and count or 0,
+                    itemId = itemId,
+                    count = count,
                     maxStack = type(maxStack) == "number" and maxStack or nil,
                     isMaxStack = booleanOrNil(isMaxStack),
                     isMaxStackRaw = tostring(isMaxStack),
@@ -336,10 +337,14 @@ local function readSlots(container)
                     slotIdContainerGuid = slotIdContainerGuid,
                     itemTypeB = itemTypeB,
                 })
+                if itemId ~= "None" and count > 0 then
+                    counts[itemId] = (counts[itemId] or 0) + count
+                end
             end
         end)
     end)
-    return result
+    if not ok then return {}, {}, tostring(err), false end
+    return result, counts, slotPath, true
 end
 
 local function resolveBox(actor)
@@ -369,8 +374,7 @@ local function resolveBox(actor)
     -- Only a concrete, nonzero FGuid may group boxes. Unexpected reflected
     -- values stay unresolved and are isolated by groupedPlans.
     box.guildKey = Identity.validatedGuildKey(valueString(box.guild))
-    box.counts, box.slotPath = readCounts(box.container)
-    box.slots = readSlots(box.container)
+    box.slots, box.counts, box.slotPath, box.snapshotValid = readSlotSnapshot(box.container)
     box.filterOff, box.filterDiagnostic = readFilterOffSet(box.container)
     return box
 end
@@ -481,16 +485,25 @@ local function findFirstCandidate(classNames)
 end
 
 local function getNetworkItemComponent()
+    if valid(networkItemCache) then return networkItemCache end
     local transmitter = findFirstCandidate(Defs.NETWORK_TRANSMITTER_CLASSES)
     if not valid(transmitter) then return nil end
     local item = firstCall(transmitter, { "GetItem" })
-    if valid(item) then return item end
+    if valid(item) then
+        networkItemCache = item
+        return networkItemCache
+    end
     item = firstProperty(transmitter, { "Item" })
-    return valid(item) and item or nil
+    if valid(item) then networkItemCache = item end
+    return valid(networkItemCache) and networkItemCache or nil
 end
 
 local function newGuid()
-    local library = StaticFindObject(Defs.KISMET_GUID_LIBRARY)
+    local library = guidLibraryCache
+    if not valid(library) then
+        library = StaticFindObject(Defs.KISMET_GUID_LIBRARY)
+        if valid(library) then guidLibraryCache = library end
+    end
     if not valid(library) then return nil end
     local guid
     pcall(function() guid = library:NewGuid() end)
@@ -664,6 +677,7 @@ local function checkAutomaticReadiness(boxes)
     if signature ~= readinessSignature then
         readinessSignature = signature
         readinessPasses = 1
+        networkItemCache = nil
     else
         readinessPasses = readinessPasses + 1
     end
@@ -723,30 +737,50 @@ local function verifyPendingTransfer(boxes)
 end
 
 local function runBalanceTick()
+    local tickStarted = os.clock()
+    local snapshotMs, planMs, submitMs = 0, 0, 0
+    local function finishPerformance(state, boxCount)
+        local totalMs = (os.clock() - tickStarted) * 1000
+        if totalMs >= Config.PERF_LOG_THRESHOLD_MS then
+            log(string.format(
+                "PERF state=%s total=%.2fms snapshot=%.2fms plan=%.2fms submit=%.2fms boxes=%d",
+                state, totalMs, snapshotMs, planMs, submitMs, boxCount or 0))
+        end
+    end
+
     balancePass = balancePass + 1
     local boxes = discoverBoxes()
+    snapshotMs = (os.clock() - tickStarted) * 1000
     if #boxes < 2 then
         readinessSignature = nil
         readinessPasses = 0
         logBalanceState("insufficient-boxes", "balance waiting for at least two loaded Feed Boxes")
+        finishPerformance("insufficient-boxes", #boxes)
         return
     end
     if not hasServerAuthority(boxes) then
         logBalanceState("not-authority", "balance inactive: this process has no server authority")
+        finishPerformance("not-authority", #boxes)
         return
     end
     verifyPendingTransfer(boxes)
     if not checkAutomaticReadiness(boxes) then
         logBalanceState("warming-up",
             string.format("balance waiting for %d stable world-readiness passes", Config.READINESS_PASSES))
+        finishPerformance("warming-up", #boxes)
         return
     end
     logReadinessDiagnostics(boxes)
 
+    local planStarted = os.clock()
     local selected, plannedCount, coolingCount = selectPlannedTransfer(
         boxes, Config.MAX_ITEMS_PER_REQUEST)
+    planMs = (os.clock() - planStarted) * 1000
+    local state
     if selected then
+        state = "moving"
         lastBalanceState = "moving"
+        local submitStarted = os.clock()
         if submitTransfer(selected, "BALANCE") then
             pendingTransfer = {
                 routeKey = routeKey(selected.groupKey, selected.move),
@@ -756,13 +790,17 @@ local function runBalanceTick()
                 destinationCountBefore = selected.destination.count,
             }
         end
+        submitMs = (os.clock() - submitStarted) * 1000
     elseif plannedCount == 0 then
+        state = "balanced"
         logBalanceState("balanced", "balance complete for all loaded guild Feed Boxes")
     else
+        state = "capacity-blocked"
         logBalanceState("capacity-blocked",
             string.format("balance paused: %d planned moves; %d routes cooling down or awaiting capacity",
                 plannedCount, coolingCount))
     end
+    finishPerformance(state, #boxes)
 end
 
 local feedBoxClassSet = {}
