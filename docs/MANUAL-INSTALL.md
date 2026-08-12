@@ -66,6 +66,7 @@ Mods\
       gamedefs.lua
       identity.lua
       main.lua
+      runtime_policy.lua
 ```
 
 Diagnostic messages are written to `UE4SS.log`. Search the log for

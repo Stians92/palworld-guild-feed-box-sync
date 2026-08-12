@@ -33,7 +33,8 @@ $workshopFiles = @(
     "Scripts\balance.lua",
     "Scripts\config.lua",
     "Scripts\gamedefs.lua",
-    "Scripts\identity.lua"
+    "Scripts\identity.lua",
+    "Scripts\runtime_policy.lua"
 )
 
 $manualFiles = @(
@@ -42,7 +43,8 @@ $manualFiles = @(
     "Scripts\balance.lua",
     "Scripts\config.lua",
     "Scripts\gamedefs.lua",
-    "Scripts\identity.lua"
+    "Scripts\identity.lua",
+    "Scripts\runtime_policy.lua"
 )
 
 foreach ($relativePath in ($workshopFiles + $manualFiles | Select-Object -Unique)) {

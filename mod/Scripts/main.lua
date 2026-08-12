@@ -2,6 +2,7 @@ local Config = require("config")
 local Defs = require("gamedefs")
 local Balance = require("balance")
 local Identity = require("identity")
+local Policy = require("runtime_policy")
 
 local MOD = "GuildFeedBox"
 local concreteByActorKey = {}
@@ -243,7 +244,7 @@ end
 
 local function readFilterOffSet(container)
     local result = {}
-    if not valid(container) then return result, "invalid container" end
+    if not valid(container) then return result, "invalid container", false end
 
     local first, second
     local ok = pcall(function() first, second = container:GetFilterOffList() end)
@@ -253,7 +254,9 @@ local function readFilterOffSet(container)
         addNames(result, first, 0)
         addNames(result, second, 0)
     end
-    if next(result) ~= nil then return result, diagnostic end
+    local directHasResult = first ~= nil and type(first) ~= "boolean"
+        or second ~= nil and type(second) ~= "boolean"
+    if ok and directHasResult then return result, diagnostic, true end
 
     -- Some UE4SS builds expose Unreal output parameters through a Lua table.
     local out = {}
@@ -265,7 +268,7 @@ local function readFilterOffSet(container)
         addNames(result, first, 0)
         addNames(result, second, 0)
     end
-    return result, diagnostic
+    return result, diagnostic, ok
 end
 
 local itemTypeBByItemId = {}
@@ -382,7 +385,7 @@ local function resolveBox(actor)
     -- values stay unresolved and are isolated by groupedPlans.
     box.guildKey = Identity.validatedGuildKey(valueString(box.guild))
     box.slots, box.counts, box.slotPath, box.snapshotValid = readSlotSnapshot(box.container)
-    box.filterOff, box.filterDiagnostic = readFilterOffSet(box.container)
+    box.filterOff, box.filterDiagnostic, box.filterReadValid = readFilterOffSet(box.container)
     return box
 end
 
@@ -423,24 +426,7 @@ local function discoverBoxes(forceRefresh)
 end
 
 local function boxAcceptsItem(box, itemTypeB)
-    if next(box.filterOff or {}) == nil then return true end
-    if Defs.RAW_FOOD_TYPE_B[itemTypeB] then
-        if box.filterOff[Defs.RAW_FOOD_FILTER_ID] then return false end
-        for filterId in pairs(box.filterOff) do
-            if filterId ~= Defs.RAW_FOOD_FILTER_ID
-                and not Defs.PREPARED_FOOD_FILTER_IDS[filterId] then return false end
-        end
-        return true
-    end
-    if Defs.PREPARED_FOOD_TYPE_B[itemTypeB] then
-        for filterId in pairs(box.filterOff) do
-            if Defs.PREPARED_FOOD_FILTER_IDS[filterId] then return false end
-            if filterId ~= Defs.RAW_FOOD_FILTER_ID then return false end
-        end
-        return true
-    end
-    -- A filtered container plus unknown item metadata is not a safe target.
-    return false
+    return Policy.boxAcceptsItem(box.filterReadValid, box.filterOff, itemTypeB, Defs)
 end
 
 local function groupedPlans(boxes)
@@ -571,10 +557,11 @@ local function routeKey(groupKey, move)
     return table.concat({ groupKey, move.itemId, move.from, move.to }, "\n")
 end
 
-local function selectPlannedTransfer(boxes, requestLimit, requireEmptyDestination)
+local function selectPlannedTransfer(boxes, requestLimit)
     local byKey = {}
     for _, box in ipairs(boxes) do byKey[box.key] = box end
     local plans = groupedPlans(boxes)
+    Policy.pruneExpiredCooldowns(routeCooldownUntil, balancePass)
     local plannedCount = 0
     local coolingCount = 0
     local selected
@@ -591,8 +578,7 @@ local function selectPlannedTransfer(boxes, requestLimit, requireEmptyDestinatio
                 if sourceBox and destinationBox then
                     local source = findSourceSlot(sourceBox, move.itemId)
                     local destination = findDestinationSlot(destinationBox, move.itemId)
-                    if source and destination
-                        and (not requireEmptyDestination or destination.count == 0) then
+                    if source and destination then
                         local count = math.min(move.count, source.count,
                             destinationCapacity(destination, source), requestLimit)
                         if count > 0 then
@@ -671,7 +657,7 @@ end
 local function checkAutomaticReadiness(boxes)
     local keys = {}
     for _, box in ipairs(boxes) do
-        if not (valid(box.actor) and valid(box.container) and box.guildKey
+        if not (valid(box.actor) and valid(box.container) and box.guildKey and box.snapshotValid
             and box.slots and #box.slots > 0) then
             readinessSignature = nil
             readinessPasses = 0
@@ -707,9 +693,10 @@ local function logReadinessDiagnostics(boxes)
             table.insert(typeDescriptions, itemId .. ":" .. itemTypeB)
         end
         table.sort(typeDescriptions)
-        log(string.format("READY box=%s filters=[%s] itemTypes=[%s] shape={%s}", box.key,
+        log(string.format("READY box=%s filters=[%s] filterValid=%s itemTypes=[%s] shape={%s}", box.key,
             table.concat(sortedMapKeys(box.filterOff), ","),
-            table.concat(typeDescriptions, ","), box.filterDiagnostic or "?"))
+            tostring(box.filterReadValid), table.concat(typeDescriptions, ","),
+            box.filterDiagnostic or "?"))
     end
 end
 
@@ -744,9 +731,11 @@ local function verifyPendingTransfer(boxes)
 end
 
 local function runBalanceTick()
-    local tickStarted = os.clock()
+    local perfEnabled = Config.ENABLE_PERF_LOGGING == true
+    local tickStarted = perfEnabled and os.clock() or 0
     local snapshotMs, planMs, submitMs = 0, 0, 0
     local function finishPerformance(state, boxCount)
+        if not perfEnabled then return end
         local totalMs = (os.clock() - tickStarted) * 1000
         if totalMs >= Config.PERF_LOG_THRESHOLD_MS then
             log(string.format(
@@ -757,7 +746,7 @@ local function runBalanceTick()
 
     balancePass = balancePass + 1
     local boxes = discoverBoxes()
-    snapshotMs = (os.clock() - tickStarted) * 1000
+    if perfEnabled then snapshotMs = (os.clock() - tickStarted) * 1000 end
     if #boxes < 2 then
         readinessSignature = nil
         readinessPasses = 0
@@ -779,15 +768,15 @@ local function runBalanceTick()
     end
     logReadinessDiagnostics(boxes)
 
-    local planStarted = os.clock()
+    local planStarted = perfEnabled and os.clock() or 0
     local selected, plannedCount, coolingCount = selectPlannedTransfer(
         boxes, Config.MAX_ITEMS_PER_REQUEST)
-    planMs = (os.clock() - planStarted) * 1000
+    if perfEnabled then planMs = (os.clock() - planStarted) * 1000 end
     local state
     if selected then
         state = "moving"
         lastBalanceState = "moving"
-        local submitStarted = os.clock()
+        local submitStarted = perfEnabled and os.clock() or 0
         if submitTransfer(selected, "BALANCE") then
             pendingTransfer = {
                 routeKey = routeKey(selected.groupKey, selected.move),
@@ -797,7 +786,7 @@ local function runBalanceTick()
                 destinationCountBefore = selected.destination.count,
             }
         end
-        submitMs = (os.clock() - submitStarted) * 1000
+        if perfEnabled then submitMs = (os.clock() - submitStarted) * 1000 end
     elseif plannedCount == 0 then
         state = "balanced"
         logBalanceState("balanced", "balance complete for all loaded guild Feed Boxes")

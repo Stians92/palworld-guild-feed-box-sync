@@ -46,7 +46,7 @@ INSTALLATION
 For co-op, install Guild Feed Box Sync on the player hosting the world. Other
 players are intended to join without installing it and should continue to see
 ordinary Feed Boxes. This has not yet been confirmed with an unmodded guest, so
-multiplayer support should be considered experimental in version 0.2.0.
+multiplayer support should be considered experimental in version 0.3.0.
 
 Windows dedicated-server files are included, but dedicated-server use and
 servers containing multiple guilds have not yet been tested.
@@ -87,10 +87,11 @@ SOURCE CODE AND SUPPORT
 10. Subscribe to the hidden item, remove or disable the local development copy,
     and smoke-test the actual subscribed installation before making it public.
 
-**0.2.0 change note:** Improved compatibility and stability alongside other
-UE4SS mods by moving periodic balancing entirely onto one persistent game-thread
-delayed action. Balancing behavior and existing vanilla Feed Box support are
-unchanged.
+**0.3.0 change note:** Significantly reduced frame-time spikes while food is
+being balanced. This update caches stable game data, avoids duplicate Feed Box
+inventory reads, handles unreadable filter state conservatively, and bounds
+expired internal cooldown data. Balancing behavior and existing vanilla Feed Box
+support are unchanged.
 
 Every future upload must change the `Version` string in `mod/Info.json` before
 building the package.

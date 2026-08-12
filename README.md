@@ -21,12 +21,13 @@ still awaits multiplayer validation.
 
 ## Current status
 
-Version 0.2.0 moves the periodic balance worker onto one persistent UE4SS
-game-thread delayed action, replacing the initial release's asynchronous bridge.
-Automatic transfers remain behind the delayed readiness gate and use only the
-native item operation verified against vanilla Feed Box UI behavior. See the
-[user guide](docs/USER-GUIDE.md) for installation, expected behavior, and
-troubleshooting.
+Version 0.3.0 substantially reduces game-thread work during active balancing by
+caching stable reflected metadata and native helpers and by reading each Feed Box
+slot array once per pass. It also fails closed when a destination filter cannot
+be read and bounds expired route cooldown state. Automatic transfers remain
+behind the delayed readiness gate and use only the native item operation verified
+against vanilla Feed Box UI behavior. See the [user guide](docs/USER-GUIDE.md)
+for installation, expected behavior, and troubleshooting.
 
 ## Requirements
 
@@ -62,7 +63,7 @@ yet been validated with an unmodded client on a modded host.
 For a Windows dedicated server, enable global mod loading and list
 `UE4SSExperimentalPW` before `GuildFeedBox` in `Mods/PalModSettings.ini`. The
 package contains the official Windows server installation rule, but dedicated-
-server runtime remains untested and should be treated as experimental in 0.2.0.
+server runtime remains untested and should be treated as experimental in 0.3.0.
 
 ## How synchronization works
 
@@ -155,6 +156,7 @@ Run the pure Lua regression tests with a standalone Lua interpreter:
 lua .\tests\balance_spec.lua
 lua .\tests\identity_spec.lua
 lua .\tests\runtime_policy_spec.lua
+lua .\tests\runtime_behavior_spec.lua
 ```
 
 Build and validate the allowlisted Workshop folder, ZIP, and SHA-256 file with:
