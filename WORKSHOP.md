@@ -9,6 +9,8 @@ distribute it among your guild's existing Feed Boxes.
 
 **Description:**
 
+[h1]Centralize your food production[/h1]
+
 Run your food production from one main base instead of building farms and
 kitchens at every outpost. Guild Feed Box Sync automatically distributes that
 food among your guild's existing Feed Boxes, helping keep remote bases
@@ -17,33 +19,41 @@ supplied.
 It uses the normal Feed Boxes you already have rather than adding a special
 building or shared container.
 
+[h1]How it works[/h1]
+
 If your guild has 1,000 baked berries across four eligible Feed Boxes, the mod
 will gradually move them toward 250 berries in each box. Every food item is
 balanced separately. When an amount cannot be divided evenly, some boxes will
 simply contain one extra item.
 
-FEATURES
+[h1]Features[/h1]
 
-- Works with both normal and refrigerated Feed Boxes.
-- Syncs food between boxes at the same base and at different bases owned by the
-  same guild.
-- Respects each box's Ingredients and Food filter settings.
-- Respects full boxes, available slots, and normal stack limits.
-- Uses the existing Feed Box inventory and interface.
-- Adds no building, recipe, technology unlock, or separate shared inventory.
+[list]
+[*]Works with both normal and refrigerated Feed Boxes.
+[*]Syncs food between boxes at the same base and at different bases owned by the
+same guild.
+[*]Respects each box's Ingredients and Food filter settings.
+[*]Respects full boxes, available slots, and normal stack limits.
+[*]Uses the existing Feed Box inventory and interface.
+[*]Adds no building, recipe, technology unlock, or separate shared inventory.
+[/list]
+
+[h1]Balancing behavior[/h1]
 
 Food is moved in steps rather than all at once. The mod checks every five
 seconds and moves up to 500 items at a time, so a large collection can take a
 little while to settle. Syncing normally begins about 40 seconds after loading a
 world. Building or destroying a Feed Box starts that short waiting period again.
 
-INSTALLATION
+[h1]Installation[/h1]
 
-1. Subscribe to UE4SS Experimental (Palworld), Workshop item 3625223587.
-2. Subscribe to Guild Feed Box Sync.
-3. Enable both under Options > Mod Management, then restart Palworld.
+[olist]
+[*]Subscribe to [url=https://steamcommunity.com/sharedfiles/filedetails/?id=3625223587]UE4SS Experimental (Palworld)[/url].
+[*]Subscribe to Guild Feed Box Sync.
+[*]Enable both under [b]Options > Mod Management[/b], then restart Palworld.
+[/olist]
 
-For co-op, install Guild Feed Box Sync on the player hosting the world. Other
+[b]Co-op:[/b] Install Guild Feed Box Sync on the player hosting the world. Other
 players are intended to join without installing it and should continue to see
 ordinary Feed Boxes. This has not yet been confirmed with an unmodded guest, so
 multiplayer support should be considered experimental in version 0.3.0.
@@ -51,17 +61,31 @@ multiplayer support should be considered experimental in version 0.3.0.
 Windows dedicated-server files are included, but dedicated-server use and
 servers containing multiple guilds have not yet been tested.
 
-TESTED IN SINGLE-PLAYER
+[h1]Test status[/h1]
 
-- Normal and refrigerated Feed Boxes
-- Distant bases
-- Ingredient-only and prepared-food-only filters
-- Full boxes and unavailable slots
-- Building and destroying boxes
-- Restarting with an existing imbalance
-- Pals eating while food is being balanced
+[h2]Tested in single-player[/h2]
 
-SOURCE CODE AND SUPPORT
+[list]
+[*]Normal and refrigerated Feed Boxes
+[*]Distant bases
+[*]Ingredient-only and prepared-food-only filters
+[*]Full boxes and unavailable slots
+[*]Building and destroying boxes
+[*]Restarting with an existing imbalance
+[*]Pals eating while food is being balanced
+[/list]
+
+[h2]Not yet verified[/h2]
+
+[list]
+[*]An unmodded guest joining a modded co-op host
+[*]Multiple guilds on one server
+[*]Windows dedicated-server runtime
+[/list]
+
+[hr][/hr]
+
+[h1]Source code and support[/h1]
 
 [url=https://github.com/Stians92/palworld-guild-feed-box-sync]Source code, user guide, bug reports, and releases on GitHub[/url]
 
