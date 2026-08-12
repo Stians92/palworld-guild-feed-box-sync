@@ -268,7 +268,11 @@ local function readFilterOffSet(container)
     return result, diagnostic
 end
 
-local function readSlotItemTypeB(slot)
+local itemTypeBByItemId = {}
+local function readSlotItemTypeB(slot, itemId)
+    local cached = itemTypeBByItemId[itemId]
+    if cached ~= nil then return cached end
+
     local first, second
     local ok = pcall(function() first, second = slot:TryGetStaticItemData() end)
     first, second = unwrap(first), unwrap(second)
@@ -286,8 +290,9 @@ local function readSlotItemTypeB(slot)
     if not valid(staticData) then return nil end
     local typeB
     pcall(function() typeB = unwrap(staticData.TypeB) end)
-    if type(typeB) == "number" then return typeB end
-    return tonumber(tostring(typeB))
+    if type(typeB) ~= "number" then typeB = tonumber(tostring(typeB)) end
+    if type(typeB) == "number" then itemTypeBByItemId[itemId] = typeB end
+    return typeB
 end
 
 local function readSlotSnapshot(container)
@@ -317,7 +322,9 @@ local function readSlotSnapshot(container)
                 pcall(function() propertyContainerGuid = guidString(slot.ContainerId.ID) end)
                 pcall(function() slotIdIndex = slotId.SlotIndex end)
                 pcall(function() slotIdContainerGuid = guidString(slotId.ContainerId.ID) end)
-                if itemId and itemId ~= "None" then itemTypeB = readSlotItemTypeB(slot) end
+                if itemId and itemId ~= "None" then
+                    itemTypeB = readSlotItemTypeB(slot, itemId)
+                end
                 itemId = itemId or "None"
                 count = type(count) == "number" and count or 0
                 table.insert(result, {
