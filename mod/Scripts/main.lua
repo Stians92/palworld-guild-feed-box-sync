@@ -723,30 +723,50 @@ local function verifyPendingTransfer(boxes)
 end
 
 local function runBalanceTick()
+    local tickStarted = os.clock()
+    local snapshotMs, planMs, submitMs = 0, 0, 0
+    local function finishPerformance(state, boxCount)
+        local totalMs = (os.clock() - tickStarted) * 1000
+        if totalMs >= Config.PERF_LOG_THRESHOLD_MS then
+            log(string.format(
+                "PERF state=%s total=%.2fms snapshot=%.2fms plan=%.2fms submit=%.2fms boxes=%d",
+                state, totalMs, snapshotMs, planMs, submitMs, boxCount or 0))
+        end
+    end
+
     balancePass = balancePass + 1
     local boxes = discoverBoxes()
+    snapshotMs = (os.clock() - tickStarted) * 1000
     if #boxes < 2 then
         readinessSignature = nil
         readinessPasses = 0
         logBalanceState("insufficient-boxes", "balance waiting for at least two loaded Feed Boxes")
+        finishPerformance("insufficient-boxes", #boxes)
         return
     end
     if not hasServerAuthority(boxes) then
         logBalanceState("not-authority", "balance inactive: this process has no server authority")
+        finishPerformance("not-authority", #boxes)
         return
     end
     verifyPendingTransfer(boxes)
     if not checkAutomaticReadiness(boxes) then
         logBalanceState("warming-up",
             string.format("balance waiting for %d stable world-readiness passes", Config.READINESS_PASSES))
+        finishPerformance("warming-up", #boxes)
         return
     end
     logReadinessDiagnostics(boxes)
 
+    local planStarted = os.clock()
     local selected, plannedCount, coolingCount = selectPlannedTransfer(
         boxes, Config.MAX_ITEMS_PER_REQUEST)
+    planMs = (os.clock() - planStarted) * 1000
+    local state
     if selected then
+        state = "moving"
         lastBalanceState = "moving"
+        local submitStarted = os.clock()
         if submitTransfer(selected, "BALANCE") then
             pendingTransfer = {
                 routeKey = routeKey(selected.groupKey, selected.move),
@@ -756,13 +776,17 @@ local function runBalanceTick()
                 destinationCountBefore = selected.destination.count,
             }
         end
+        submitMs = (os.clock() - submitStarted) * 1000
     elseif plannedCount == 0 then
+        state = "balanced"
         logBalanceState("balanced", "balance complete for all loaded guild Feed Boxes")
     else
+        state = "capacity-blocked"
         logBalanceState("capacity-blocked",
             string.format("balance paused: %d planned moves; %d routes cooling down or awaiting capacity",
                 plannedCount, coolingCount))
     end
+    finishPerformance(state, #boxes)
 end
 
 local feedBoxClassSet = {}
